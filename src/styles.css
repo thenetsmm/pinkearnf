@@ -358,3 +358,15 @@ h3 { font-size: 17px; font-weight: 700; }
 .mbox-val { position: absolute; left: 0; right: 0; top: 40px; font-size: 26px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgb(0 0 0 / 45%); }
 @keyframes bob { 50% { transform: translateY(-6px); } }
 @keyframes shake { 20% { transform: rotate(-8deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(6deg); } }
+
+/* leaderboard card header: keep title and button from colliding */
+.lb-head { display: flex; align-items: center; gap: 10px; }
+.lb-head .tile { width: 48px; height: 48px; flex: none; }
+.lb-head h3 { font-size: 18px; white-space: nowrap; }
+.lb-head p { white-space: nowrap; }
+.lb-head .btn { flex: none; min-width: 0; padding: 0 14px; height: 40px; font-size: 15px; white-space: nowrap; }
+@media (max-width: 360px) { .lb-head .tile { display: none; } }
+.lb-head .tile { display: none; }
+.lb-head .grow { min-width: 0; }
+.lb-head h3 { font-size: 19px; overflow: hidden; text-overflow: ellipsis; }
+.game-body .btn { white-space: nowrap; padding: 0 10px; font-size: 15px; }
