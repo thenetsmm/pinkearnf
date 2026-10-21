@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
+import { INLINE_ICONS } from '../inlineIcons.js';
 
 /** Line icon from /assets/icons, recoloured through CSS mask so it follows `currentColor`. */
 export function Icon({ name, size = 22, className = '' }) {
   return (
     <span
       className={`ic ${className}`}
-      style={{ '--src': `url(/assets/icons/${name}.svg)`, width: size, height: size }}
+      style={{ '--src': `url(${INLINE_ICONS[name] || `/assets/icons/${name}.svg`})`, width: size, height: size }}
       aria-hidden="true"
     />
   );

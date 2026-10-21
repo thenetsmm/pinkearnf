@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api, postRetry } from '../api.js';
 import { haptic, beep, fmt } from '../tg.js';
 import { useCountdown, mmss } from '../hooks.js';
+import * as IMG from '../gameAssets.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -34,7 +35,7 @@ export function GameModal({ title, onClose, children }) {
   );
 }
 
-const Confetti = () => <img className="confetti" src="/assets/games/confetti.png" alt="" draggable="false" />;
+const Confetti = () => <img className="confetti" src={IMG.confetti} alt="" draggable="false" />;
 
 function Result({ prize, onClose, extra }) {
   if (prize > 0) {
@@ -128,7 +129,7 @@ export function SpinModal({ me, ctx, onClose }) {
         <div className="wheel-pointer" />
         <img
           className="wheel"
-          src="/assets/games/wheel.png"
+          src={IMG.wheel}
           alt=""
           draggable="false"
           style={{ transform: `rotate(${rot}deg)`, transition: phase === 'spinning' ? 'transform 4.6s cubic-bezier(.12,.6,.1,1)' : 'none' }}
@@ -186,7 +187,7 @@ function ScratchCanvas({ onReveal, revealed }) {
       x.fillRect(0, 0, CW, CH);
       st.current.base = sample().total;
     };
-    img.src = '/assets/games/foil.png';
+    img.src = IMG.foil;
 
     function sample() {
       let total = 0;
@@ -313,7 +314,7 @@ export function ScratchModal({ me, ctx, onClose }) {
         </>
       ) : (
         <>
-          <img className="gm-art" src="/assets/games/scratch-art.png" alt="" draggable="false" />
+          <img className="gm-art" src={IMG.scratchArt} alt="" draggable="false" />
           <p className="gm-sub">Win {g.min}–{g.max} pts on every card</p>
           <button
             type="button"
@@ -441,7 +442,7 @@ export function MysteryModal({ me, ctx, onClose }) {
             onClick={() => pick(id)}
             aria-label={`Box ${slotOf(id) + 1}`}
           >
-            <img src={open[id] ? '/assets/games/box-open.png' : '/assets/games/box-closed.png'} alt="" draggable="false" />
+            <img src={open[id] ? IMG.boxOpen : IMG.boxClosed} alt="" draggable="false" />
             {open[id] && <span className="mbox-val">{vals[id]}</span>}
           </button>
         ))}
