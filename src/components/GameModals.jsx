@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api, postRetry } from '../api.js';
-import { haptic, beep, fmt } from '../tg.js';
+import { haptic, fmt } from '../tg.js';
 import { useCountdown, mmss } from '../hooks.js';
 import * as IMG from '../gameAssets.js';
+import { sfx } from '../sfx.js';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -66,7 +67,8 @@ export function SpinModal({ me, ctx, onClose }) {
   const [info, setInfo] = useState({ left: g.left, cooldownSec: g.cooldownSec });
   const [bal, setBal] = useState(me.balance);
   const [phase, setPhase] = useState('idle'); // idle | loading | spinning | result
-  const [rot, setRot] = useState(0);
+  const wheelRef = useRef(null);
+  const rotRef = useRef(0);
   const [prize, setPrize] = useState(0);
   const cd = useCountdown(info.cooldownSec);
   const free = info.left > 0;
@@ -91,15 +93,25 @@ export function SpinModal({ me, ctx, onClose }) {
       }
       if (!alive.current) return ctx.refresh();
 
-      const extra = 360 * 6 + (360 - 60 * r.index) + (Math.random() * 30 - 15);
-      setRot((p) => p - (p % 360) + extra);
+      // spin for ~5.5 s with a long, smooth slow-down (ticks follow the wheel's speed)
+      const D = 5500;
+      const target = rotRef.current - (rotRef.current % 360) + 360 * 7 + (360 - 60 * r.index) + (Math.random() * 30 - 15);
+      const el = wheelRef.current;
+      el.style.transition = 'none';
+      el.style.transform = `rotate(${rotRef.current}deg)`;
+      void el.offsetWidth; // flush so the transition below always starts from here
+      el.style.transition = `transform ${D}ms cubic-bezier(.17,.6,.1,1)`;
+      el.style.transform = `rotate(${target}deg)`;
+      rotRef.current = target;
       setPhase('spinning');
-      for (let i = 0; i < 12; i += 1) {
-        await wait(380);
-        if (!alive.current) break;
+      const t0 = Date.now();
+      while (alive.current && Date.now() - t0 < D - 150) {
+        const p = (Date.now() - t0) / D;
+        sfx.tick();
         haptic('light');
+        await wait(55 + 420 * p * p * p); // fast at the start, slower and slower at the end
       }
-      await wait(300);
+      await wait(Math.max(0, D - (Date.now() - t0)) + 250);
       setBal(r.balance);
       setPrize(r.prize);
       if (r.paid) setInfo((s) => ({ ...s }));
@@ -107,7 +119,8 @@ export function SpinModal({ me, ctx, onClose }) {
       ctx.refresh();
       if (!alive.current) return;
       haptic(r.prize > 0 ? 'success' : 'warning');
-      beep(r.prize > 0 ? 'success' : 'error');
+      if (r.prize > 0) sfx.tada();
+      else sfx.lose();
       setPhase('result');
     } catch (e) {
       haptic('error');
@@ -132,7 +145,7 @@ export function SpinModal({ me, ctx, onClose }) {
           src={IMG.wheel}
           alt=""
           draggable="false"
-          style={{ transform: `rotate(${rot}deg)`, transition: phase === 'spinning' ? 'transform 4.6s cubic-bezier(.12,.6,.1,1)' : 'none' }}
+          ref={wheelRef}
         />
         <div className="wheel-hub" />
       </div>
@@ -171,35 +184,32 @@ function ScratchCanvas({ onReveal, revealed }) {
   useEffect(() => {
     const c = ref.current;
     const x = c.getContext('2d', { willReadFrequently: true });
+    // solid silver first, so the card is NEVER see-through (even before the foil picture is decoded)
+    const gr = x.createLinearGradient(0, 0, CW, CH);
+    gr.addColorStop(0, '#d9d9e3');
+    gr.addColorStop(1, '#a9a9bd');
+    x.fillStyle = gr;
+    x.fillRect(0, 0, CW, CH);
+    st.current.base = sample().opaque;
     const img = new Image();
-    const paint = () => {
+    img.onload = () => {
       x.globalCompositeOperation = 'source-over';
-      x.clearRect(0, 0, CW, CH);
       x.drawImage(img, 0, 0, CW, CH);
-      st.current.base = sample().total;
-    };
-    img.onload = paint;
-    img.onerror = () => {
-      const gr = x.createLinearGradient(0, 0, CW, CH);
-      gr.addColorStop(0, '#d9d9e3');
-      gr.addColorStop(1, '#a9a9bd');
-      x.fillStyle = gr;
-      x.fillRect(0, 0, CW, CH);
-      st.current.base = sample().total;
+      st.current.base = sample().opaque;
     };
     img.src = IMG.foil;
 
     function sample() {
-      let total = 0;
+      let opaque = 0;
       let clear = 0;
       const d = x.getImageData(0, 0, CW, CH).data;
       for (let py = 6; py < CH; py += 12) {
         for (let px = 6; px < CW; px += 12) {
-          total += 1;
           if (d[(py * CW + px) * 4 + 3] < 20) clear += 1;
+          else opaque += 1;
         }
       }
-      return { total, clear };
+      return { opaque, clear };
     }
 
     const pos = (e) => {
@@ -219,12 +229,14 @@ function ScratchCanvas({ onReveal, revealed }) {
       x.stroke();
       last = [px, py];
       st.current.moves += 1;
-      if (st.current.moves % 6 === 0) {
+      if (st.current.moves % 3 === 0) sfx.scratch();
+      // judge only after a real scratching gesture (a tap never reveals the prize)
+      if (st.current.moves >= 12 && st.current.moves % 4 === 0 && st.current.base > 0) {
         const s = sample();
-        // transparent corners of the foil image don't count: compare against what was opaque at the start
-        const base = st.current.base || s.total;
-        const cleared = s.clear - (s.total - base);
-        if (cleared / base >= 0.5) {
+        const total = s.clear + s.opaque;
+        // foil samples scratched away = clear now - samples that were already clear at the start
+        const cleared = Math.max(0, s.clear - (total - st.current.base));
+        if (cleared / st.current.base >= 0.5) {
           st.current.done = true;
           onReveal();
         }
@@ -291,7 +303,7 @@ export function ScratchModal({ me, ctx, onClose }) {
   const onReveal = () => {
     setRevealed(true);
     haptic('success');
-    beep('success');
+    sfx.win();
   };
 
   return (
@@ -370,6 +382,7 @@ export function MysteryModal({ me, ctx, onClose }) {
       setVals(g.prizes);
       setPhase('teaser');
       setOpen([true, true, true]);
+      sfx.sparkle();
       await wait(1700);
       if (!alive.current) return;
       setOpen([false, false, false]);
@@ -385,6 +398,7 @@ export function MysteryModal({ me, ctx, onClose }) {
         [cur[a], cur[b]] = [cur[b], cur[a]];
         if (!alive.current) return;
         setOrder(cur);
+        sfx.whoosh();
         haptic('light');
         await wait(380);
       }
@@ -400,6 +414,7 @@ export function MysteryModal({ me, ctx, onClose }) {
   async function pick(id) {
     if (phase !== 'pick' || !res) return;
     setPhase('reveal');
+    sfx.pop();
     haptic('medium');
     setShake(true);
     await wait(650);
@@ -410,7 +425,7 @@ export function MysteryModal({ me, ctx, onClose }) {
     setVals(v);
     setOpen([0, 1, 2].map((b) => b === id));
     haptic(res.prize >= 50 ? 'success' : 'light');
-    beep('success');
+    sfx.win();
     await wait(1000);
     if (!alive.current) return;
     setOpen([true, true, true]);
