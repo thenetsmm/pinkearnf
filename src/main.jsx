@@ -4,6 +4,8 @@ import './design-tokens.css';
 import './styles.css';
 import App from './App.jsx';
 import { initTelegram } from './tg.js';
+import { installClickSounds } from './sfx.js';
 
 initTelegram();
+installClickSounds();
 createRoot(document.getElementById('root')).render(<App />);

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api, postRetry, hasTelegram, canUseDevUser } from './api.js';
-import { WebApp, haptic, beep, openLink } from './tg.js';
+import { WebApp, haptic, openLink } from './tg.js';
+import { sfx } from './sfx.js';
 import { Icon, Toast, Button } from './components/ui.jsx';
 import AdOverlay from './components/AdOverlay.jsx';
 import { WithdrawSheet, SettingsSheet } from './components/Sheets.jsx';
@@ -83,7 +84,7 @@ export default function App() {
   /* ------------------------------- actions ------------------------------- */
   const celebrate = (reward) => {
     haptic('success');
-    beep('success');
+    sfx.win();
     notify(`+${reward} pts earned!`, 'success');
   };
 
@@ -93,7 +94,7 @@ export default function App() {
     setBusy(key);
     try {
       const r = await api(path, { method: 'POST' });
-      okText ? (haptic('success'), beep('success'), notify(okText(r), 'success')) : null;
+      okText ? (haptic('success'), sfx.win(), notify(okText(r), 'success')) : null;
       await refresh();
     } catch (e) {
       haptic('error');
@@ -127,13 +128,13 @@ export default function App() {
 
   const completeAd = (sessionId) => postRetry('/api/ads/complete', { sessionId });
 
-  async function watchAd({ offerId, title }) {
+  async function watchAd({ offerId, title, task }) {
     if (busyRef.current || !me) return;
-    const key = `ad:${offerId || 'main'}`;
+    const key = `ad:${offerId || (task ? 'task' : 'main')}`;
     busyRef.current = key;
     setBusy(key);
     try {
-      const s = await api('/api/ads/start', { method: 'POST', body: offerId ? { offerId } : {} });
+      const s = await api('/api/ads/start', { method: 'POST', body: offerId ? { offerId } : task ? { task } : {} });
       let watched = false;
 
       if (s.url) {
@@ -183,6 +184,39 @@ export default function App() {
     }
   }
 
+  /** start -> show ad -> finish. Used by Piggy 2x and Promo codes. Resolves to true on success. */
+  async function adFlow(key, startPath, startBody, title, endPath, endBody, okText) {
+    if (busyRef.current || !me) return false;
+    busyRef.current = key;
+    setBusy(key);
+    try {
+      const s = await api(startPath, { method: 'POST', body: startBody });
+      const watched = await showAd(title, s.seconds);
+      if (!watched) return false;
+      const r = await postRetry(endPath, { ...endBody, sessionId: s.sessionId });
+      haptic('success');
+      sfx.win();
+      notify(okText(r), 'success');
+      await refresh();
+      return true;
+    } catch (e) {
+      haptic('error');
+      notify(e.message, 'error');
+      refresh();
+      return false;
+    } finally {
+      busyRef.current = '';
+      setBusy('');
+    }
+  }
+
+  const piggyClaim = () => run('piggy', '/api/piggy/claim', (r) => `+${r.reward} pts from the Piggy Bank!`);
+  const piggyDouble = () =>
+    adFlow('piggy2x', '/api/piggy/start', {}, 'Double your piggy bank', '/api/piggy/claim-double', {}, (r) => `2x claimed! +${r.reward} pts`);
+  const redeemPromo = (code) =>
+    adFlow('promo', '/api/promo/check', { code }, 'Unlock your promo code', '/api/promo/redeem', { code }, (r) => `Promo code redeemed! +${r.reward} pts`);
+  const claimChannel = () => run('channel', '/api/channel/claim', (r) => `Thanks for joining! +${r.reward} pts`);
+
   function openWithdraw() {
     if (!me) return;
     const need = me.withdraw.min * me.withdraw.ptsPerKs;
@@ -205,6 +239,10 @@ export default function App() {
     refresh,
     openGame: setGame,
     runGameAd,
+    piggyClaim,
+    piggyDouble,
+    redeemPromo,
+    claimChannel,
     busy,
     checkin,
     claimAdsTask,
