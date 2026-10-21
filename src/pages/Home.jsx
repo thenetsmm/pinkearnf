@@ -1,6 +1,8 @@
-import React from 'react';
-import { Card, Button, Icon, Check, TopBar, RoundButton, IconTile } from '../components/ui.jsx';
+import React, { useState } from 'react';
+import { Button, Icon, Check, TopBar, RoundButton } from '../components/ui.jsx';
 import { fmt, openTelegramLink } from '../tg.js';
+import { useCountdown, mmss } from '../hooks.js';
+import * as IMG from '../gameAssets.js';
 
 function greeting() {
   const h = new Date().getHours();
@@ -8,6 +10,106 @@ function greeting() {
   if (h < 12) return 'Good morning!';
   if (h < 18) return 'Good afternoon!';
   return 'Good evening!';
+}
+
+function PiggyCard({ me, ctx }) {
+  const p = me.piggy;
+  const left = useCountdown(p.remainingSec);
+  const ready = left <= 0;
+  const pct = Math.min(100, Math.round(((p.cycleSec - left) / p.cycleSec) * 100));
+  return (
+    <section className="card piggy">
+      <div className="row">
+        <img className="pg-img" src={IMG.piggy} alt="" draggable="false" />
+        <div className="grow">
+          <h3>Piggy Bank</h3>
+          <p className="muted">Auto Mining · {Math.round(p.cycleSec / 60)}-minute cycle</p>
+        </div>
+        <div className="pg-state">
+          <b className={ready ? 'full' : ''}>{ready ? 'Full!' : 'Filling…'}</b>
+          <span className="muted small">{ready ? 'Ready to claim' : `${mmss(left)} left`}</span>
+        </div>
+      </div>
+      <div className="pg-bar"><i style={{ width: `${pct}%` }} /></div>
+      <div className="between pg-meta">
+        <span className="muted small">{pct}% filled{ready ? ' · choose your reward' : ''}</span>
+        <span className="pg-chip">Auto mining</span>
+      </div>
+      <div className="between pg-meta">
+        <span className={ready ? 'ok small' : 'muted small'}>{ready ? '✓ Reward ready to claim' : 'Filling up…'}</span>
+        <span className="muted small">{mmss(Math.min(p.cycleSec, p.cycleSec - left))} complete</span>
+      </div>
+      <div className="pg-btns">
+        <button type="button" className="pg-btn plain" disabled={!ready || !!ctx.busy} onClick={ctx.piggyClaim}>
+          <b>Claim +{p.base} pts</b>
+          <small>No ad</small>
+        </button>
+        <button type="button" className="pg-btn pink" disabled={!ready || !!ctx.busy} onClick={ctx.piggyDouble}>
+          <b>{ctx.busy === 'piggy2x' ? 'Loading…' : `🎬 Claim 2x (+${p.boosted} pts)`}</b>
+          <small>Watch 1 ad</small>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function PromoCard({ me, ctx }) {
+  const [code, setCode] = useState('');
+  const submit = async () => {
+    const c = code.trim();
+    if (!c) return ctx.notify('Enter a promo code first', 'error');
+    const ok = await ctx.redeemPromo(c);
+    if (ok) setCode('');
+  };
+  return (
+    <section className="card promo">
+      <div className="row">
+        <img className="pm-img" src={IMG.gift} alt="" draggable="false" />
+        <div className="grow">
+          <h3>Redeem Promo Code</h3>
+          <p className="muted">Have a Promo Code?</p>
+        </div>
+      </div>
+      <div className="promo-row">
+        <input
+          className="input"
+          placeholder="Enter code..."
+          value={code}
+          maxLength={32}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+        />
+        <Button size="sm" busy={ctx.busy === 'promo'} onClick={submit}>Redeem</Button>
+      </div>
+      <p className="muted small mt-s">
+        Get daily codes in the Official Telegram Channel{me.channel ? ` · @${me.channel.username}` : ''}
+      </p>
+    </section>
+  );
+}
+
+function ChannelBanner({ me, ctx }) {
+  const ch = me.channel;
+  const [opened, setOpened] = useState(false);
+  if (!ch || ch.claimed) return null;
+  const click = () => {
+    if (!opened) {
+      openTelegramLink(ch.link);
+      setOpened(true);
+    } else ctx.claimChannel();
+  };
+  return (
+    <section className="card channel">
+      <img className="ch-img" src={IMG.megaphone} alt="" draggable="false" />
+      <div className="grow">
+        <h3>Join {me.config.appName} Official Channel</h3>
+        <p className="muted small">Get daily promo codes &amp; payment proofs!</p>
+      </div>
+      <Button size="sm" busy={ctx.busy === 'channel'} onClick={click}>{opened ? `Claim +${ch.reward}` : `Join +${ch.reward} pts`}</Button>
+    </section>
+  );
 }
 
 export default function Home({ me, ctx }) {
@@ -34,26 +136,19 @@ export default function Home({ me, ctx }) {
         <button type="button" className="btn btn-white" onClick={ctx.openWithdraw}>Withdraw</button>
       </section>
 
-      <Card>
-        <div className="row">
-          <IconTile name="flame" />
+      <section className="card">
+        <div className="streak-head">
+          <img className="st-img" src={IMG.flameTile} alt="" draggable="false" />
           <div className="grow">
-            <h3>Daily Streak</h3>
+            <h3>Daily Streak &amp; Check-in</h3>
             <p className="muted">{streak.count} {streak.count === 1 ? 'day' : 'days'} in a row</p>
           </div>
+          {streak.checkedToday ? (
+            <span className="checked-chip">Checked in<br />Come back tomorrow</span>
+          ) : (
+            <Button size="sm" busy={ctx.busy === 'checkin'} onClick={ctx.checkin}>Check in · +{streak.nextReward}</Button>
+          )}
         </div>
-        <Button
-          className="wide mt"
-          disabled={streak.checkedToday}
-          busy={ctx.busy === 'checkin'}
-          onClick={ctx.checkin}
-        >
-          {streak.checkedToday ? 'Checked in · come back tomorrow' : `Check in · +${streak.nextReward} pts`}
-        </Button>
-      </Card>
-
-      <Card>
-        <h3>Check-in rewards</h3>
         <div className="days">
           {days.map((d) => (
             <div key={d.day} className={`day ${d.done ? 'done' : ''} ${d.next ? 'next' : ''}`}>
@@ -63,7 +158,11 @@ export default function Home({ me, ctx }) {
           ))}
         </div>
         <p className="muted small mt-s">Check in every day to keep your streak. Miss a day and it starts over from Day 1.</p>
-      </Card>
+      </section>
+
+      <PiggyCard me={me} ctx={ctx} />
+      <PromoCard me={me} ctx={ctx} />
+      <ChannelBanner me={me} ctx={ctx} />
     </>
   );
 }

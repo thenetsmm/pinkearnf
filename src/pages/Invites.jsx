@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Chip, Icon, TopBar, RoundButton, Empty } from '../components/ui.jsx';
+import { Card, Button, Chip, Icon, TopBar, RoundButton, Empty, Sheet } from '../components/ui.jsx';
 import { api } from '../api.js';
 import { copyText, shareInvite, openTelegramLink, haptic } from '../tg.js';
 
 export default function Invites({ me, ctx }) {
   const r = me.referral;
   const [friends, setFriends] = useState(null);
+  const [list, setList] = useState(null); // 'active' | 'pending'
 
   useEffect(() => {
     let alive = true;
@@ -68,8 +69,8 @@ export default function Invites({ me, ctx }) {
 
       <h2 className="section-title">My Referrals</h2>
       <div className="pills">
-        <span className="pill gray">{r.active} active</span>
-        <span className="pill peach">{r.pending} pending</span>
+        <button type="button" className="pill gray" onClick={() => setList('active')}>{r.active} active ›</button>
+        <button type="button" className="pill peach" onClick={() => setList('pending')}>{r.pending} pending ›</button>
       </div>
 
       {friends === null ? null : friends.length === 0 ? (
@@ -87,6 +88,31 @@ export default function Invites({ me, ctx }) {
             </div>
           ))}
         </Card>
+      )}
+    
+      {list && (
+        <Sheet title={list === 'active' ? 'Active friends' : 'Pending friends'} onClose={() => setList(null)}>
+          <p className="muted small">
+            {list === 'active'
+              ? `These friends watched ${r.activationAds}+ ads and unlocked your bonus.`
+              : `These friends have not watched ${r.activationAds} ads yet.`}
+          </p>
+          {(friends || []).filter((f) => f.active === (list === 'active')).length === 0 ? (
+            <Empty>{list === 'active' ? 'No active friends yet.' : 'No pending friends.'}</Empty>
+          ) : (
+            <div className="list">
+              {(friends || []).filter((f) => f.active === (list === 'active')).map((f, i) => (
+                <div className="list-row" key={i}>
+                  <div className="avatar-s">{(f.name || '?').slice(0, 1).toUpperCase()}</div>
+                  <div className="grow">
+                    <b>{f.name}</b>
+                    <p className="muted small">{f.active ? `Earned you ${f.earned} pts in commission` : `${Math.min(f.adsWatched, r.activationAds)}/${r.activationAds} ads watched`}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Sheet>
       )}
     </>
   );

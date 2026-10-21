@@ -44,6 +44,7 @@ export default function History({ onBack }) {
                   <div className="grow">
                     <b>{fmt(w.amountKs)} Ks · {w.method}</b>
                     <p className="muted small">{date(w.createdAt)}</p>
+                    {w.status === 'rejected' && w.reason && <p className="reject-reason">Reason: {w.reason}</p>}
                   </div>
                   <span className={`st st-${w.status}`}>{STATUS[w.status]}</span>
                 </div>

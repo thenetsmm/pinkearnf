@@ -68,7 +68,7 @@ export default function Tasks({ me, ctx }) {
           ) : daily.ads.ready ? (
             <Button size="sm" busy={ctx.busy === 'tasks-ads'} onClick={ctx.claimAdsTask}>Claim</Button>
           ) : (
-            <Button size="sm" disabled={adsLeft <= 0} onClick={() => ctx.watchAd({ title: 'Watch & earn' })}>Start</Button>
+            <Button size="sm" disabled={adsLeft <= 0} busy={ctx.busy === 'ad:task'} onClick={() => ctx.watchAd({ title: 'Watch & earn', task: 'ads5' })}>Start</Button>
           )}
         </Card>
 
