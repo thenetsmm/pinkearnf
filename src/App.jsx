@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { api, hasTelegram, canUseDevUser } from './api.js';
+import { api, postRetry, hasTelegram, canUseDevUser } from './api.js';
 import { WebApp, haptic, beep, openLink } from './tg.js';
 import { Icon, Toast, Button } from './components/ui.jsx';
 import AdOverlay from './components/AdOverlay.jsx';
@@ -9,10 +9,13 @@ import Tasks from './pages/Tasks.jsx';
 import Invites from './pages/Invites.jsx';
 import Profile from './pages/Profile.jsx';
 import History from './pages/History.jsx';
+import Games from './pages/Games.jsx';
+import { SpinModal, ScratchModal, MysteryModal } from './components/GameModals.jsx';
 
 const TABS = [
   { id: 'home', label: 'Home', icon: 'home' },
   { id: 'tasks', label: 'Tasks', icon: 'tasks-checklist' },
+  { id: 'games', label: 'Games', icon: 'gamepad' },
   { id: 'invites', label: 'Invites', icon: 'users' },
   { id: 'profile', label: 'Profile', icon: 'user' },
 ];
@@ -26,6 +29,7 @@ export default function App() {
   const [view, setView] = useState(null); // 'history'
   const [sheet, setSheet] = useState(null); // 'withdraw' | 'settings'
   const [ad, setAd] = useState(null); // countdown overlay
+  const [game, setGame] = useState(null); // 'spin' | 'scratch' | 'mystery'
   const [busy, setBusy] = useState('');
   const [toast, setToast] = useState(null);
   const busyRef = useRef('');
@@ -48,7 +52,7 @@ export default function App() {
 
   useEffect(() => {
     if (hasTelegram() || canUseDevUser()) refresh();
-    else setError({ code: 'not_telegram', message: 'Please open PinkEarn from Telegram.' });
+    else setError({ code: 'not_telegram', message: 'Please open the app from Telegram.' });
   }, [refresh]);
 
   // reload when the user comes back to the app
@@ -121,18 +125,7 @@ export default function App() {
     }
   }
 
-  async function completeAd(sessionId) {
-    for (let i = 0; i < 5; i += 1) {
-      try {
-        return await api('/api/ads/complete', { method: 'POST', body: { sessionId } });
-      } catch (e) {
-        // the provider's server callback can arrive a moment after the ad closes
-        if ((e.code === 'awaiting_provider' || e.code === 'too_early') && i < 4) await sleep(1500);
-        else throw e;
-      }
-    }
-    return null;
-  }
+  const completeAd = (sessionId) => postRetry('/api/ads/complete', { sessionId });
 
   async function watchAd({ offerId, title }) {
     if (busyRef.current || !me) return;
@@ -169,6 +162,27 @@ export default function App() {
     }
   }
 
+  /** Shows an ad (AdsGram when configured, otherwise the demo countdown). Returns true when it was watched. */
+  async function showAd(title, seconds) {
+    if (me.config.adsgramBlockId && window.Adsgram) return showAdsgram(me.config.adsgramBlockId);
+    if (me.config.demoAds) return showOverlay({ title, seconds, reward: null, isLink: false });
+    throw new Error('No ads available right now. Try again soon.');
+  }
+
+  /** Opens an ad session for a game and plays the ad. Resolves to the sessionId, or null if not watched. */
+  async function runGameAd(name) {
+    try {
+      const s = await api(`/api/games/${name}/start`, { method: 'POST' });
+      const watched = await showAd(name === 'spin' ? 'Watch to spin' : 'Watch to scratch', s.seconds);
+      return watched ? s.sessionId : null;
+    } catch (e) {
+      haptic('error');
+      notify(e.message, 'error');
+      refresh();
+      return null;
+    }
+  }
+
   function openWithdraw() {
     if (!me) return;
     const need = me.withdraw.min * me.withdraw.ptsPerKs;
@@ -188,6 +202,9 @@ export default function App() {
     go,
     openWithdraw,
     notify,
+    refresh,
+    openGame: setGame,
+    runGameAd,
     busy,
     checkin,
     claimAdsTask,
@@ -207,7 +224,7 @@ export default function App() {
     return (
       <div className="app center-screen">
         <div className="logo-badge"><Icon name="telegram-plane" size={34} /></div>
-        <h1 className="page-title">PinkEarn</h1>
+        <h1 className="page-title">{error.code === 'not_telegram' ? 'Telegram Mini App' : 'Connection problem'}</h1>
         <p className="muted">{error.message}</p>
         {offline && <Button onClick={refresh}>Try again</Button>}
       </div>
@@ -230,6 +247,7 @@ export default function App() {
         <>
           {tab === 'home' && <Home me={me} ctx={ctx} />}
           {tab === 'tasks' && <Tasks me={me} ctx={ctx} />}
+          {tab === 'games' && <Games me={me} ctx={ctx} />}
           {tab === 'invites' && <Invites me={me} ctx={ctx} />}
           {tab === 'profile' && <Profile me={me} ctx={ctx} />}
         </>
@@ -256,6 +274,10 @@ export default function App() {
         />
       )}
       {sheet === 'settings' && <SettingsSheet onClose={() => setSheet(null)} />}
+
+      {game === 'spin' && <SpinModal me={me} ctx={ctx} onClose={() => setGame(null)} />}
+      {game === 'scratch' && <ScratchModal me={me} ctx={ctx} onClose={() => setGame(null)} />}
+      {game === 'mystery' && <MysteryModal me={me} ctx={ctx} onClose={() => setGame(null)} />}
 
       {ad && (
         <AdOverlay

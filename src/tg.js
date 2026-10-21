@@ -82,8 +82,8 @@ export function openTelegramLink(url) {
   else window.open(url, '_blank', 'noopener');
 }
 
-export function shareInvite(link) {
-  const text = 'Watch ads & earn points on PinkEarn 💗 Join with my link:';
+export function shareInvite(link, appName = 'ShadowEarn') {
+  const text = `Watch ads & earn points on ${appName} 💗 Join with my link:`;
   openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
 }
 

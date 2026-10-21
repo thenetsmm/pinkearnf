@@ -27,3 +27,21 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   return data;
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * POST that retries while the ad provider's server callback has not arrived yet
+ * (awaiting_provider) or the ad timer is a hair short (too_early).
+ */
+export async function postRetry(path, body, tries = 5) {
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      return await api(path, { method: 'POST', body });
+    } catch (e) {
+      if ((e.code === 'awaiting_provider' || e.code === 'too_early') && i < tries - 1) await sleep(1500);
+      else throw e;
+    }
+  }
+  return null;
+}
