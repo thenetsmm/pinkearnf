@@ -4,6 +4,7 @@ import { LeaderRow, LeaderboardSheet } from '../components/Leaderboard.jsx';
 import { api } from '../api.js';
 import { useCountdown, mmss } from '../hooks.js';
 import { haptic } from '../tg.js';
+import * as IMG from '../gameAssets.js';
 
 function GameCard({ image, blend, title, lines, accent, button, onClick, muted }) {
   return (
@@ -67,7 +68,7 @@ export default function Games({ me, ctx }) {
       </div>
 
       <section className="card">
-        <div className="row">
+        <div className="lb-head">
           <div className="tile flat"><Icon name="leaderboard" size={26} /></div>
           <div className="grow">
             <h3>Daily Leaderboard</h3>
@@ -84,7 +85,7 @@ export default function Games({ me, ctx }) {
       <h2 className="section-title">Play &amp; Earn</h2>
 
       <GameCard
-        image="/assets/games/wheel.png"
+        image={IMG.wheel}
         title="Lucky Spin"
         lines={['Watch 1 ad • 1 spin', `${g.spin.limit} spins/day • ${cd}-min cooldown`]}
         accent={spinFree ? `${g.spin.left}/${g.spin.limit} spins left` : `Free spins used • Spin Again costs ${g.spin.paidCost} pts`}
@@ -94,7 +95,7 @@ export default function Games({ me, ctx }) {
       />
 
       <GameCard
-        image="/assets/games/scratch-art.png"
+        image={IMG.scratchArt}
         blend
         title="Scratch Card"
         lines={['Watch 1 ad • 1 card', `${g.scratch.limit} cards/day • ${cd}-min cooldown`]}
@@ -105,7 +106,7 @@ export default function Games({ me, ctx }) {
       />
 
       <GameCard
-        image="/assets/games/mystery-art.png"
+        image={IMG.mysteryArt}
         blend
         title="Mystery Box"
         lines={[`Cost: ${g.mystery.cost} pts • Win ${Math.min(...g.mystery.prizes)}–${Math.max(...g.mystery.prizes)} pts`, 'No ad • No cooldown']}
