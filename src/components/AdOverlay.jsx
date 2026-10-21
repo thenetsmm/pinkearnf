@@ -42,7 +42,7 @@ export default function AdOverlay({ title, seconds, reward, isLink, onDone }) {
         </p>
 
         <Button disabled={!done} onClick={() => onDone(true)} className="wide">
-          {done ? `Claim +${reward} pts` : `Wait ${left}s`}
+          {done ? (reward ? `Claim +${reward} pts` : 'Continue') : `Wait ${left}s`}
         </Button>
         <button type="button" className="link-btn" onClick={() => onDone(false)}>Cancel</button>
       </div>
