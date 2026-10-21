@@ -27,8 +27,9 @@ export default function Invites({ me, ctx }) {
   return (
     <>
       <TopBar
+        title={me.config.appName}
         left={<RoundButton icon="telegram-plane" label="Support" onClick={() => openTelegramLink(`https://t.me/${me.config.supportUsername}`)} />}
-        right={<button type="button" className="plain-icon" aria-label="Share" onClick={() => shareInvite(r.link)}><Icon name="share" size={24} /></button>}
+        right={<button type="button" className="plain-icon" aria-label="Share" onClick={() => shareInvite(r.link, me.config.appName)}><Icon name="share" size={24} /></button>}
       />
       <h1 className="page-title">Invite Friends</h1>
 
@@ -45,7 +46,7 @@ export default function Invites({ me, ctx }) {
         <div className="tile flat"><Icon name="coins" size={26} /></div>
         <div className="grow">
           <p className="task-title">Lifetime commission</p>
-          <p className="muted small">Earn {pct}% ({r.commissionExample} pts) every time your friend watches an ad</p>
+          <p className="muted small">Earn {pct}% (about {r.commissionExample} pt) every time your friend watches an ad</p>
         </div>
       </Card>
 
@@ -62,7 +63,7 @@ export default function Invites({ me, ctx }) {
           <span className="link-text">{r.link.replace('https://', '')}</span>
           <button type="button" className="copy" onClick={copy}><Icon name="copy" size={18} /> Copy</button>
         </div>
-        <Button className="wide mt" onClick={() => shareInvite(r.link)}>Share invite</Button>
+        <Button className="wide mt" onClick={() => shareInvite(r.link, me.config.appName)}>Share invite</Button>
       </Card>
 
       <h2 className="section-title">My Referrals</h2>

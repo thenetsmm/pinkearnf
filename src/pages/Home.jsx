@@ -20,6 +20,7 @@ export default function Home({ me, ctx }) {
   return (
     <>
       <TopBar
+        title={me.config.appName}
         left={<RoundButton icon="telegram-plane" label="Support" onClick={() => openTelegramLink(`https://t.me/${me.config.supportUsername}`)} />}
         right={<RoundButton icon="bell" tone="peach" label="Activity" onClick={() => ctx.openHistory()} />}
       />
