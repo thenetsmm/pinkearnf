@@ -101,6 +101,18 @@ function ChannelBanner({ me, ctx }) {
   );
 }
 
+function ProofsCard({ ctx }) {
+  return (
+    <section className="card channel">
+      <div className="grow">
+        <h3>Payment Proofs ✅</h3>
+        <p className="muted small">See real payouts sent to our users. Updated after every withdrawal.</p>
+      </div>
+      <Button size="sm" onClick={() => ctx.openSheet('proofs')}>View</Button>
+    </section>
+  );
+}
+
 export default function Home({ me, ctx }) {
   const { streak } = me;
   const days = streak.rewards.map((reward, i) => {
@@ -152,6 +164,7 @@ export default function Home({ me, ctx }) {
       <PiggyCard me={me} ctx={ctx} />
       <PromoCard me={me} ctx={ctx} />
       <ChannelBanner me={me} ctx={ctx} />
+      <ProofsCard ctx={ctx} />
     </>
   );
 }
