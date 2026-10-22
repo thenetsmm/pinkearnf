@@ -4,7 +4,7 @@ import { WebApp, haptic, openLink } from './tg.js';
 import { sfx } from './sfx.js';
 import { Icon, Toast, Button } from './components/ui.jsx';
 import AdOverlay from './components/AdOverlay.jsx';
-import { WithdrawSheet, SettingsSheet } from './components/Sheets.jsx';
+import { WithdrawSheet, SettingsSheet, ProofsSheet } from './components/Sheets.jsx';
 import Home from './pages/Home.jsx';
 import Tasks from './pages/Tasks.jsx';
 import Invites from './pages/Invites.jsx';
@@ -29,7 +29,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('home');
   const [view, setView] = useState(null); // 'history'
-  const [sheet, setSheet] = useState(null); // 'withdraw' | 'settings'
+  const [sheet, setSheet] = useState(null); // 'withdraw' | 'settings' | 'proofs'
   const [ad, setAd] = useState(null); // countdown overlay
   const [game, setGame] = useState(null); // 'spin' | 'scratch' | 'mystery'
   const [busy, setBusy] = useState('');
@@ -332,6 +332,7 @@ export default function App() {
         />
       )}
       {sheet === 'settings' && <SettingsSheet onClose={() => setSheet(null)} />}
+      {sheet === 'proofs' && <ProofsSheet onClose={() => setSheet(null)} />}
 
       {game === 'spin' && <SpinModal me={me} ctx={ctx} onClose={() => setGame(null)} />}
       {game === 'scratch' && <ScratchModal me={me} ctx={ctx} onClose={() => setGame(null)} />}
