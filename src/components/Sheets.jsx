@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Sheet, Button, Icon, Check } from './ui.jsx';
+import React, { useEffect, useState } from 'react';
+import { Sheet, Button, Icon, Check, Empty } from './ui.jsx';
 import { api } from '../api.js';
-import { getPrefs, setPref, haptic, fmt } from '../tg.js';
+import { getPrefs, setPref, haptic, fmt, openTelegramLink } from '../tg.js';
 
 const PAY_LOGO = { 'KBZ Pay': '/assets/pay/kbzpay.png', 'Wave Pay': '/assets/pay/wavepay.png' };
 const payName = (m) => m.replace(/\s+/g, ''); // "KBZ Pay" -> "KBZPay"
@@ -120,6 +120,53 @@ export function SettingsSheet({ onClose }) {
           <button type="button" role="switch" aria-checked={prefs[k]} className={`switch ${prefs[k] ? 'on' : ''}`} onClick={() => toggle(k)} />
         </div>
       ))}
+    </Sheet>
+  );
+}
+
+const proofDate = (d) =>
+  new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+/** Public payout proofs: every paid withdrawal (name / number masked). */
+export function ProofsSheet({ onClose }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api('/api/proofs').then(setData).catch((e) => setError(e.message));
+  }, []);
+
+  return (
+    <Sheet title="Payment Proofs" onClose={onClose}>
+      <p className="muted small">Every withdrawal we pay is listed here and posted in our public channel. Names and numbers are partly hidden for privacy.</p>
+      {data && (
+        <div className="stats big">
+          <div><span className="muted small">Payouts sent</span><b>{fmt(data.count)}</b></div>
+          <div><span className="muted small">Total paid</span><b>{fmt(data.totalKs)} Ks</b></div>
+        </div>
+      )}
+      {error && <Empty>{error}</Empty>}
+      {!data && !error && <Empty>Loading…</Empty>}
+      {data && data.items.length === 0 && <Empty>No payouts yet. The first ones will appear here.</Empty>}
+      {data && data.items.length > 0 && (
+        <div className="list proofs-list">
+          {data.items.map((p) => (
+            <div className="list-row" key={p.id}>
+              <div className="grow">
+                <b>{p.name} · {fmt(p.amountKs)} Ks</b>
+                <p className="muted small">{p.method} · {p.account}</p>
+                <p className="muted small">{proofDate(p.createdAt)}</p>
+              </div>
+              <span className="st st-success">Paid ✓</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {data?.channel && (
+        <Button className="wide mt" onClick={() => openTelegramLink(data.channel.link)}>
+          Open proof channel @{data.channel.username}
+        </Button>
+      )}
     </Sheet>
   );
 }
