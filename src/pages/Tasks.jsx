@@ -1,9 +1,15 @@
 import React from 'react';
 import { Card, Button, Chip, Icon, Clock, IconTile } from '../components/ui.jsx';
+import { useCountdown, mmss } from '../hooks.js';
+
+const hms = (s) => `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 export default function Tasks({ me, ctx }) {
   const { daily, mainAd, offers } = me;
   const adsLeft = mainAd.remainingToday;
+  const cd = useCountdown(mainAd.cooldownSec);
+  const reset = useCountdown(mainAd.resetSec);
+  const mainLabel = adsLeft <= 0 ? `⏳ Next ads in ${hms(reset)}` : cd > 0 ? `⏳ Wait ${mmss(cd)} for next ad` : 'Start Watching';
 
   return (
     <>
@@ -17,8 +23,8 @@ export default function Tasks({ me, ctx }) {
           <span className="play-btn"><Icon name="play" size={30} /></span>
         </div>
         <div className="video-body">
-          <Button className="wide" disabled={adsLeft <= 0} busy={ctx.busy === 'ad:main'} onClick={() => ctx.watchAd({ title: 'Watch & earn' })}>
-            {adsLeft > 0 ? 'Start Watching' : 'Daily limit reached'}
+          <Button className="wide" disabled={adsLeft <= 0 || cd > 0} busy={ctx.busy === 'ad:main'} onClick={() => ctx.watchAd({ title: 'Watch & earn' })}>
+            {mainLabel}
           </Button>
           <p className="muted small center mt-s">{adsLeft} ads left today</p>
         </div>
@@ -66,9 +72,9 @@ export default function Tasks({ me, ctx }) {
           {daily.ads.claimed ? (
             <Button size="sm" disabled>Claimed</Button>
           ) : daily.ads.ready ? (
-            <Button size="sm" busy={ctx.busy === 'tasks-ads'} onClick={ctx.claimAdsTask}>Claim</Button>
+            <Button size="sm" busy={ctx.busy === 'tasks-ads'} onClick={ctx.claimAdsTask}>Claim +{daily.ads.reward}</Button>
           ) : (
-            <Button size="sm" disabled={adsLeft <= 0} busy={ctx.busy === 'ad:task'} onClick={() => ctx.watchAd({ title: 'Watch & earn', task: 'ads5' })}>Start</Button>
+            <Button size="sm" disabled={me.mainAd.cooldownSec < 0} busy={ctx.busy === 'ad:task'} onClick={() => ctx.watchAd({ title: 'Watch & earn', task: 'ads5' })}>Start</Button>
           )}
         </Card>
 

@@ -23,30 +23,19 @@ function PiggyCard({ me, ctx }) {
         <img className="pg-img" src={IMG.piggy} alt="" draggable="false" />
         <div className="grow">
           <h3>Piggy Bank</h3>
-          <p className="muted">Auto Mining · {Math.round(p.cycleSec / 60)}-minute cycle</p>
+          <p className="muted nowrap">Auto mining • {Math.round(p.cycleSec / 60)}m cycle</p>
         </div>
-        <div className="pg-state">
-          <b className={ready ? 'full' : ''}>{ready ? 'Full!' : 'Filling…'}</b>
-          <span className="muted small">{ready ? 'Ready to claim' : `${mmss(left)} left`}</span>
-        </div>
+        <div className={`pg-time ${ready ? 'full' : ''}`}>{ready ? 'Full!' : `⏳ ${mmss(left)}`}</div>
       </div>
       <div className="pg-bar"><i style={{ width: `${pct}%` }} /></div>
-      <div className="between pg-meta">
-        <span className="muted small">{pct}% filled{ready ? ' · choose your reward' : ''}</span>
-        <span className="pg-chip">Auto mining</span>
-      </div>
-      <div className="between pg-meta">
-        <span className={ready ? 'ok small' : 'muted small'}>{ready ? '✓ Reward ready to claim' : 'Filling up…'}</span>
-        <span className="muted small">{mmss(Math.min(p.cycleSec, p.cycleSec - left))} complete</span>
-      </div>
       <div className="pg-btns">
         <button type="button" className="pg-btn plain" disabled={!ready || !!ctx.busy} onClick={ctx.piggyClaim}>
           <b>Claim +{p.base} pts</b>
           <small>No ad</small>
         </button>
         <button type="button" className="pg-btn pink" disabled={!ready || !!ctx.busy} onClick={ctx.piggyDouble}>
-          <b>{ctx.busy === 'piggy2x' ? 'Loading…' : `🎬 Claim 2x (+${p.boosted} pts)`}</b>
-          <small>Watch 1 ad</small>
+          <b>{ctx.busy === 'piggy2x' ? 'Loading…' : `🎬 Claim +${p.boosted} pts`}</b>
+          <small>2x Bonus • Watch ad</small>
         </button>
       </div>
     </section>
@@ -66,8 +55,8 @@ function PromoCard({ me, ctx }) {
       <div className="row">
         <img className="pm-img" src={IMG.gift} alt="" draggable="false" />
         <div className="grow">
-          <h3>Redeem Promo Code</h3>
-          <p className="muted">Have a Promo Code?</p>
+          <h3>Promo Code</h3>
+          <p className="muted">Enter secret code for bonus pts</p>
         </div>
       </div>
       <div className="promo-row">
@@ -84,7 +73,7 @@ function PromoCard({ me, ctx }) {
         <Button size="sm" busy={ctx.busy === 'promo'} onClick={submit}>Redeem</Button>
       </div>
       <p className="muted small mt-s">
-        Get daily codes in the Official Telegram Channel{me.channel ? ` · @${me.channel.username}` : ''}
+        Daily codes are posted in our official channel{me.channel ? ` · @${me.channel.username}` : ''}
       </p>
     </section>
   );
@@ -140,13 +129,13 @@ export default function Home({ me, ctx }) {
         <div className="streak-head">
           <img className="st-img" src={IMG.flameTile} alt="" draggable="false" />
           <div className="grow">
-            <h3>Daily Streak &amp; Check-in</h3>
-            <p className="muted">{streak.count} {streak.count === 1 ? 'day' : 'days'} in a row</p>
+            <h3>Daily Check-in</h3>
+            <p className="muted nowrap">🔥 {streak.count}-day streak</p>
           </div>
           {streak.checkedToday ? (
-            <span className="checked-chip">Checked in<br />Come back tomorrow</span>
+            <span className="checked-chip">✓ Checked in</span>
           ) : (
-            <Button size="sm" busy={ctx.busy === 'checkin'} onClick={ctx.checkin}>Check in · +{streak.nextReward}</Button>
+            <Button size="sm" busy={ctx.busy === 'checkin'} onClick={ctx.checkin}>Check in +{streak.nextReward}</Button>
           )}
         </div>
         <div className="days">
