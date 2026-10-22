@@ -97,10 +97,13 @@ export function SpinModal({ me, ctx, onClose }) {
       const D = 5500;
       const target = rotRef.current - (rotRef.current % 360) + 360 * 7 + (360 - 60 * r.index) + (Math.random() * 30 - 15);
       const el = wheelRef.current;
-      el.style.transition = 'none';
-      el.style.transform = `rotate(${rotRef.current}deg)`;
-      void el.offsetWidth; // flush so the transition below always starts from here
-      el.style.transition = `transform ${D}ms cubic-bezier(.17,.6,.1,1)`;
+      const from = rotRef.current;
+      // Web Animations API: runs even where CSS transitions are switched off (Reduce Motion etc.)
+      el.animate([{ transform: `rotate(${from}deg)` }, { transform: `rotate(${target}deg)` }], {
+        duration: D,
+        easing: 'cubic-bezier(.17,.6,.1,1)',
+        fill: 'forwards',
+      });
       el.style.transform = `rotate(${target}deg)`;
       rotRef.current = target;
       setPhase('spinning');
@@ -391,7 +394,7 @@ export function MysteryModal({ me, ctx, onClose }) {
       // shuffle
       setPhase('shuffle');
       let cur = [0, 1, 2];
-      for (let i = 0; i < 7; i += 1) {
+      for (let i = 0; i < 9; i += 1) {
         const a = i % 3;
         const b = (a + 1 + (i % 2)) % 3;
         cur = [...cur];
@@ -400,7 +403,7 @@ export function MysteryModal({ me, ctx, onClose }) {
         setOrder(cur);
         sfx.whoosh();
         haptic('light');
-        await wait(380);
+        await wait(300);
       }
       if (alive.current) setPhase('pick');
     } catch (e) {
