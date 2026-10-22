@@ -4,8 +4,8 @@ export const hasTelegram = () => !!window.Telegram?.WebApp?.initData;
 export const canUseDevUser = () => !!import.meta.env.VITE_DEV_USER;
 
 /** Calls the backend. Telegram initData is sent as `Authorization: tma <initData>`. */
-export async function api(path, { method = 'GET', body } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+export async function api(path, { method = 'GET', body, headers: extra } = {}) {
+  const headers = { 'Content-Type': 'application/json', ...extra };
   const initData = window.Telegram?.WebApp?.initData;
   if (initData) headers.Authorization = 'tma ' + initData;
   else if (import.meta.env.VITE_DEV_USER) headers['x-dev-user'] = import.meta.env.VITE_DEV_USER;

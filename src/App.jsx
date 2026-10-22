@@ -9,6 +9,7 @@ import Home from './pages/Home.jsx';
 import Tasks from './pages/Tasks.jsx';
 import Invites from './pages/Invites.jsx';
 import Profile from './pages/Profile.jsx';
+import Admin from './admin/Admin.jsx';
 import History from './pages/History.jsx';
 import Games from './pages/Games.jsx';
 import { SpinModal, ScratchModal, MysteryModal } from './components/GameModals.jsx';
@@ -196,9 +197,11 @@ export default function App() {
     setBusy(key);
     try {
       const s = await api(startPath, { method: 'POST', body: startBody });
-      const watched = await showAd(title, s.seconds);
-      if (!watched) return false;
-      const r = await postRetry(endPath, { ...endBody, sessionId: s.sessionId });
+      if (s.requireAd !== false) {
+        const watched = await showAd(title, s.seconds);
+        if (!watched) return false;
+      }
+      const r = await postRetry(endPath, s.requireAd === false ? { ...endBody } : { ...endBody, sessionId: s.sessionId });
       haptic('success');
       sfx.win();
       notify(okText(r), 'success');
@@ -225,6 +228,10 @@ export default function App() {
   function openWithdraw() {
     if (!me) return;
     const need = me.withdraw.min * me.withdraw.ptsPerKs;
+    if (me.withdraw.paused) {
+      haptic('warning');
+      return notify('Withdrawals are temporarily paused. Please try again later.', 'error');
+    }
     if (me.withdraw.hasPending) {
       haptic('warning');
       return notify('You already have a pending withdrawal', 'error');
@@ -248,6 +255,8 @@ export default function App() {
     piggyDouble,
     redeemPromo,
     claimChannel,
+    openLink,
+    claimOffer: (o) => run(`offer:${o.id}`, `/api/offers/${o.id}/claim`, (r) => `+${r.reward} pts earned!`),
     busy,
     checkin,
     claimAdsTask,
@@ -255,6 +264,10 @@ export default function App() {
     claimBonus,
     watchAd,
     openSheet: setSheet,
+    openAdmin: () => {
+      setView('admin');
+      window.scrollTo({ top: 0 });
+    },
     openHistory: () => {
       setView('history');
       window.scrollTo({ top: 0 });
@@ -267,7 +280,7 @@ export default function App() {
     return (
       <div className="app center-screen">
         <div className="logo-badge"><Icon name="telegram-plane" size={34} /></div>
-        <h1 className="page-title">{error.code === 'not_telegram' ? 'Telegram Mini App' : 'Connection problem'}</h1>
+        <h1 className="page-title">{error.code === 'not_telegram' ? 'Telegram Mini App' : error.code === 'maintenance' ? 'Under maintenance' : 'Connection problem'}</h1>
         <p className="muted">{error.message}</p>
         {offline && <Button onClick={refresh}>Try again</Button>}
       </div>
@@ -284,7 +297,9 @@ export default function App() {
 
   return (
     <div className="app">
-      {view === 'history' ? (
+      {view === 'admin' ? (
+        <Admin me={me} notify={notify} onExit={() => setView(null)} />
+      ) : view === 'history' ? (
         <History onBack={() => setView(null)} />
       ) : (
         <>
@@ -296,14 +311,14 @@ export default function App() {
         </>
       )}
 
-      <nav className="nav" aria-label="Main">
+      {view !== 'admin' && <nav className="nav" aria-label="Main">
         {TABS.map((t) => (
           <button key={t.id} type="button" className={`nav-item ${tab === t.id && !view ? 'on' : ''}`} onClick={() => go(t.id)}>
             <span className="nav-ic"><Icon name={t.icon} size={24} /></span>
             <span>{t.label}</span>
           </button>
         ))}
-      </nav>
+      </nav>}
 
       {sheet === 'withdraw' && (
         <WithdrawSheet

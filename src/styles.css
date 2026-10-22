@@ -425,3 +425,4 @@ h3 { font-size: 17px; font-weight: 700; }
 .promo .input::placeholder { font-size: 14px; }
 .promo-row .input { text-transform: uppercase; }
 .promo-row .input:placeholder-shown { text-transform: none; }
+.offer-btns{display:flex;gap:6px}
