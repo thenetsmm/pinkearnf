@@ -266,7 +266,7 @@ h3 { font-size: 17px; font-weight: 700; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes up { from { transform: translateY(40px); opacity: .6; } }
 @keyframes pop { from { transform: translate(-50%, 12px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* (no global reduced-motion override: it froze the wheel and the box shuffle on phones with Reduce Motion on) */
 
 /* ----- withdraw sheet ----- */
 .wd-balance { background: #fdeef3; border-radius: 18px; padding: 16px 18px; margin: 8px 0 4px; }
@@ -349,7 +349,7 @@ h3 { font-size: 17px; font-weight: 700; }
 
 /* mystery */
 .mbox-stage { position: relative; height: 150px; margin: 10px 0 4px; }
-.mbox { position: absolute; top: 0; width: 33.333%; padding: 0 4px; transition: left .35s ease, opacity .4s, filter .4s; }
+.mbox { position: absolute; top: 0; width: 33.333%; padding: 0 4px; transition: left .26s ease-in-out, opacity .4s, filter .4s; }
 .mbox img { width: 100%; height: 120px; object-fit: contain; }
 .mbox.pickable { animation: bob 1s ease-in-out infinite; }
 .mbox.pickable:active { transform: scale(.95); }
@@ -411,3 +411,17 @@ h3 { font-size: 17px; font-weight: 700; }
 .channel h3 { font-size: 15px; }
 .channel .btn { font-size: 14px; white-space: nowrap; }
 .piggy .muted { font-size: 14px; }
+
+/* tidy-ups */
+.nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.streak-head h3, .piggy h3, .promo h3 { font-size: 18px; white-space: nowrap; }
+.checked-chip { white-space: nowrap; font-weight: 600; padding: 7px 12px; border-radius: 99px; font-size: 14px; }
+.pg-time { flex: none; font-size: 18px; font-weight: 700; color: var(--pe-ink); font-variant-numeric: tabular-nums; }
+.pg-time.full { color: var(--pe-pink); }
+.pg-btns { grid-template-columns: 1fr 1.25fr; }
+.pg-btn b { font-size: 15px; white-space: nowrap; }
+.pg-btn small { white-space: nowrap; }
+.promo .input { font-size: 14px; padding: 0 16px; text-transform: none; }
+.promo .input::placeholder { font-size: 14px; }
+.promo-row .input { text-transform: uppercase; }
+.promo-row .input:placeholder-shown { text-transform: none; }

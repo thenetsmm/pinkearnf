@@ -150,7 +150,12 @@ export default function App() {
 
       if (watched) {
         const r = await completeAd(s.sessionId);
-        if (r) celebrate(r.reward);
+        if (r && r.reward > 0) celebrate(r.reward);
+        else if (r) {
+          haptic('success');
+          sfx.win();
+          notify(task ? `Ad counted! ${Math.min(r.taskAds || 0, me.daily.ads.target)}/${me.daily.ads.target}` : 'Done!', 'success');
+        }
       }
       await refresh();
     } catch (e) {
