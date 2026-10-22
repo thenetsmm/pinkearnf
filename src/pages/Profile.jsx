@@ -102,6 +102,17 @@ export default function Profile({ me, ctx }) {
         <Icon name="arrow-right" size={20} />
       </button>
 
+      {me.isAdmin && (
+        <button type="button" className="card nav-row" onClick={ctx.openAdmin}>
+          <div className="tile">⚙️</div>
+          <div className="grow left">
+            <h3>⚙️ Admin Panel</h3>
+            <p className="muted small">Restricted · PIN required</p>
+          </div>
+          <Icon name="arrow-right" size={20} />
+        </button>
+      )}
+
       <button type="button" className="card nav-row" onClick={() => openTelegramLink(`https://t.me/${me.config.supportUsername}`)}>
         <div className="tile"><Icon name="telegram-plane" size={26} /></div>
         <div className="grow left">

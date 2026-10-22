@@ -30,21 +30,50 @@ export default function Tasks({ me, ctx }) {
         </div>
       </section>
 
+      {adsLeft <= 0 && (me.config.partnerLinks || []).filter(Boolean).length > 0 && (
+        <>
+          <h2 className="section-title">More ways to earn</h2>
+          <div className="stack">
+            {me.config.partnerLinks.map((l, i) => (
+              <Card key={l} className="task">
+                <IconTile name="arrow-right" />
+                <div className="grow"><p className="task-title">Partner app {i + 1}</p><Chip>Free</Chip></div>
+                <Button size="sm" onClick={() => ctx.openLink(l)}>Open</Button>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
       <h2 className="section-title">Today&rsquo;s Offers</h2>
       <div className="stack">
         {offers.length === 0 && <p className="empty">No offers right now. Check back soon!</p>}
-        {offers.map((o) => (
-          <Card key={o.id} className="task">
-            <IconTile name="play" />
-            <div className="grow">
-              <p className="task-title">{o.title}</p>
-              <Chip>+{o.reward} pts</Chip>
-            </div>
-            <Button size="sm" disabled={o.remainingToday <= 0} busy={ctx.busy === `ad:${o.id}`} onClick={() => ctx.watchAd({ offerId: o.id, title: o.title, key: o.id })}>
-              {o.remainingToday > 0 ? 'Start' : 'Done'}
-            </Button>
-          </Card>
-        ))}
+        {offers.map((o) => {
+          const oneTime = o.type === 'channel' || o.type === 'link';
+          return (
+            <Card key={o.id} className="task">
+              <IconTile name={oneTime ? (o.type === 'channel' ? 'telegram-plane' : 'arrow-right') : 'play'} />
+              <div className="grow">
+                <p className="task-title">{o.title}</p>
+                <Chip>+{o.reward} pts</Chip>
+              </div>
+              {oneTime ? (
+                o.claimed ? (
+                  <Button size="sm" disabled>Done</Button>
+                ) : (
+                  <span className="offer-btns">
+                    <Button size="sm" onClick={() => ctx.openLink(o.link)}>{o.type === 'channel' ? 'Join' : 'Open'}</Button>
+                    <Button size="sm" busy={ctx.busy === `offer:${o.id}`} onClick={() => ctx.claimOffer(o)}>Claim</Button>
+                  </span>
+                )
+              ) : (
+                <Button size="sm" disabled={o.remainingToday <= 0} busy={ctx.busy === `ad:${o.id}`} onClick={() => ctx.watchAd({ offerId: o.id, title: o.title, key: o.id })}>
+                  {o.remainingToday > 0 ? 'Start' : 'Done'}
+                </Button>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       <h1 className="page-title mt-l">Daily Tasks</h1>
