@@ -152,6 +152,14 @@ export default function Home({ me, ctx }) {
       <PiggyCard me={me} ctx={ctx} />
       <PromoCard me={me} ctx={ctx} />
       <ChannelBanner me={me} ctx={ctx} />
+      <button type="button" className="card nav-row" onClick={ctx.openProofs}>
+        <div className="tile">✅</div>
+        <div className="grow left">
+          <h3>Payment Proofs</h3>
+          <p className="muted small">See real payouts sent to users</p>
+        </div>
+        <Icon name="arrow-right" size={20} />
+      </button>
     </>
   );
 }

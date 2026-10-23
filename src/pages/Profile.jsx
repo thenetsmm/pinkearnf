@@ -102,6 +102,15 @@ export default function Profile({ me, ctx }) {
         <Icon name="arrow-right" size={20} />
       </button>
 
+      <button type="button" className="card nav-row" onClick={ctx.openProofs}>
+        <div className="tile">✅</div>
+        <div className="grow left">
+          <h3>Payment Proofs</h3>
+          <p className="muted small">Real payouts sent to users</p>
+        </div>
+        <Icon name="arrow-right" size={20} />
+      </button>
+
       {me.isAdmin && (
         <button type="button" className="card nav-row" onClick={ctx.openAdmin}>
           <div className="tile">⚙️</div>
