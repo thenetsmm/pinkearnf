@@ -6,12 +6,14 @@ import Payouts from './Payouts.jsx';
 import Users from './Users.jsx';
 import Content from './Content.jsx';
 import Settings from './Settings.jsx';
+import AiBot from './AiBot.jsx';
 
 const TABS = [
   ['dash', '▦', 'Dashboard'],
   ['pay', '↗', 'Payouts'],
   ['users', '◎', 'Users'],
   ['content', '▤', 'Content'],
+  ['ai', '🤖', 'AI'],
   ['settings', '⚙', 'Settings'],
 ];
 
@@ -98,6 +100,7 @@ export default function Admin({ me, notify, onExit }) {
             {tab === 'pay' && <Payouts me={me} notify={notify} />}
             {tab === 'users' && <Users notify={notify} />}
             {tab === 'content' && <Content notify={notify} />}
+            {tab === 'ai' && <AiBot notify={notify} />}
             {tab === 'settings' && <Settings notify={notify} />}
           </>
         )}
