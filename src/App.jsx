@@ -127,12 +127,44 @@ export default function App() {
   }
 
   // OnClickA video ad (backup network): initCdTma resolves to a show() function
-  let onclickaShow = null;
   async function showOnclicka(spotId) {
     try {
-      if (!onclickaShow) onclickaShow = await window.initCdTma({ id: spotId });
-      await onclickaShow();
+      if (!window.__ocaShow) window.__ocaShow = await window.initCdTma({ id: spotId });
+      await window.__ocaShow();
       return 'done';
+    } catch {
+      return 'error';
+    }
+  }
+
+  // RichAds: the tag loads on demand (ids come from the admin settings, digits only)
+  async function showRichads(pubId, appId) {
+    if (!/^\d{1,12}$/.test(pubId) || !/^\d{1,12}$/.test(appId)) return 'error';
+    try {
+      let richads = window.__richads;
+      if (!richads) {
+        if (!window.TelegramAdsController) {
+          await new Promise((res, rej) => {
+            const el = document.createElement('script');
+            el.src = 'https://richinfo.co/richpartners/telegram/js/tg-ob.js';
+            el.onload = res;
+            el.onerror = rej;
+            document.head.appendChild(el);
+          });
+        }
+        const ctrl = new window.TelegramAdsController();
+        ctrl.initialize({ pubId, appId });
+        richads = window.__richads = ctrl;
+      }
+      if (typeof richads.triggerInterstitialVideo !== 'function') return 'error';
+      const t0 = Date.now();
+      try {
+        await richads.triggerInterstitialVideo();
+        return 'done';
+      } catch {
+        // the SDK rejects both for "no ad" and "closed": a rejection in the first 2 seconds means there was no ad
+        return Date.now() - t0 < 2000 ? 'error' : 'skipped';
+      }
     } catch {
       return 'error';
     }
@@ -154,6 +186,15 @@ export default function App() {
     if (c.onclickaSpotId && window.initCdTma) {
       const r = await showOnclicka(c.onclickaSpotId);
       if (r === 'done') return true;
+      failed = true;
+    }
+    if (c.richadsPubId && c.richadsAppId) {
+      const r = await showRichads(c.richadsPubId, c.richadsAppId);
+      if (r === 'done') return true;
+      if (r === 'skipped') {
+        notify('Watch the whole ad to earn points', 'error');
+        return false;
+      }
       failed = true;
     }
     if (failed) throw new Error('No ads available right now. Try again soon.');
