@@ -116,16 +116,49 @@ export default function App() {
   const showOverlay = (opts) =>
     new Promise((resolve) => setAd({ ...opts, resolve }));
 
+  /** AdsGram: 'done' | 'skipped' (user left early) | 'error' (no ad / block not active -> try the next network) */
   async function showAdsgram(blockId) {
     try {
-      const ctrl = window.Adsgram.init({ blockId });
-      const r = await ctrl.show();
-      if (!r?.done) notify('Watch the whole ad to earn points', 'error');
-      return !!r?.done;
+      const r = await window.Adsgram.init({ blockId }).show();
+      return r?.done ? 'done' : 'skipped';
     } catch (r) {
-      notify(r?.description === 'user_skipped' || r?.done === false ? 'Watch the whole ad to earn points' : 'No ads available right now. Try again soon.', 'error');
-      return false;
+      return r?.error === false || r?.description === 'user_skipped' || r?.done === false ? 'skipped' : 'error';
     }
+  }
+
+  // OnClickA video ad (backup network): initCdTma resolves to a show() function
+  let onclickaShow = null;
+  async function showOnclicka(spotId) {
+    try {
+      if (!onclickaShow) onclickaShow = await window.initCdTma({ id: spotId });
+      await onclickaShow();
+      return 'done';
+    } catch {
+      return 'error';
+    }
+  }
+
+  /** Plays one ad: AdsGram first, OnClickA if AdsGram has none, otherwise the demo countdown. Resolves true when watched. */
+  async function playAd(title, seconds, reward) {
+    const c = me.config;
+    let failed = false;
+    if (c.adsgramBlockId && window.Adsgram) {
+      const r = await showAdsgram(c.adsgramBlockId);
+      if (r === 'done') return true;
+      if (r === 'skipped') {
+        notify('Watch the whole ad to earn points', 'error');
+        return false;
+      }
+      failed = true;
+    }
+    if (c.onclickaSpotId && window.initCdTma) {
+      const r = await showOnclicka(c.onclickaSpotId);
+      if (r === 'done') return true;
+      failed = true;
+    }
+    if (failed) throw new Error('No ads available right now. Try again soon.');
+    if (c.demoAds) return showOverlay({ title, seconds, reward, isLink: false });
+    throw new Error('No ads available right now. Try again soon.');
   }
 
   const completeAd = (sessionId) => postRetry('/api/ads/complete', { sessionId });
@@ -142,12 +175,8 @@ export default function App() {
       if (s.url) {
         openLink(s.url);
         watched = await showOverlay({ title, seconds: s.seconds, reward: s.reward, isLink: true });
-      } else if (me.config.adsgramBlockId && window.Adsgram) {
-        watched = await showAdsgram(me.config.adsgramBlockId);
-      } else if (me.config.demoAds) {
-        watched = await showOverlay({ title, seconds: s.seconds, reward: s.reward, isLink: false });
       } else {
-        throw new Error('No ads available right now. Try again soon.');
+        watched = await playAd(title, s.seconds, s.reward);
       }
 
       if (watched) {
@@ -170,12 +199,8 @@ export default function App() {
     }
   }
 
-  /** Shows an ad (AdsGram when configured, otherwise the demo countdown). Returns true when it was watched. */
-  async function showAd(title, seconds) {
-    if (me.config.adsgramBlockId && window.Adsgram) return showAdsgram(me.config.adsgramBlockId);
-    if (me.config.demoAds) return showOverlay({ title, seconds, reward: null, isLink: false });
-    throw new Error('No ads available right now. Try again soon.');
-  }
+  /** Shows an ad for games / piggy / promo. Returns true when it was watched. */
+  const showAd = (title, seconds) => playAd(title, seconds, null);
 
   /** Opens an ad session for a game and plays the ad. Resolves to the sessionId, or null if not watched. */
   async function runGameAd(name) {
