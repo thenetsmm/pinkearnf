@@ -16,7 +16,7 @@ const toForm = (v) => ({
   spinDailyLimit: s2(v.spinDailyLimit), scratchDailyLimit: s2(v.scratchDailyLimit), gameCooldownMinutes: s2(v.gameCooldownMinutes),
   spinPaidCost: s2(v.spinPaidCost), mysteryCost: s2(v.mysteryCost),
   odds: { spin: v.gameOdds.spin.map(s2), scratch: v.gameOdds.scratch.map(s2), mystery: v.gameOdds.mystery.map(s2) },
-  adsgramBlockId: v.adsgramBlockId || '', richadsZoneId: v.richadsZoneId || '', adsterraLink: v.adsterraLink || '',
+  adsgramBlockId: v.adsgramBlockId || '', onclickaSpotId: v.onclickaSpotId || '', richadsZoneId: v.richadsZoneId || '', adsterraLink: v.adsterraLink || '',
   partners: v.partnerLinks.map((x) => x || ''), redirectOnLimit: !!v.redirectOnLimit,
 });
 const toServer = (f) => ({
@@ -29,7 +29,7 @@ const toServer = (f) => ({
   spinDailyLimit: f.spinDailyLimit, scratchDailyLimit: f.scratchDailyLimit, gameCooldownMinutes: f.gameCooldownMinutes,
   spinPaidCost: f.spinPaidCost, mysteryCost: f.mysteryCost,
   gameOdds: f.odds,
-  adsgramBlockId: f.adsgramBlockId, richadsZoneId: f.richadsZoneId, adsterraLink: f.adsterraLink,
+  adsgramBlockId: f.adsgramBlockId, onclickaSpotId: f.onclickaSpotId, richadsZoneId: f.richadsZoneId, adsterraLink: f.adsterraLink,
   partnerLinks: f.partners, redirectOnLimit: f.redirectOnLimit,
 });
 
@@ -158,9 +158,10 @@ export default function Settings({ notify }) {
         <>
           <Section title="📺 Ad Network IDs" badge="No redeploy" tone="bad">
             <Field label="Primary · AdsGram Block ID" value={f.adsgramBlockId} onChange={set('adsgramBlockId')} placeholder="block-xxxx" />
-            <Field label="Backup 1 · RichAds Zone ID" value={f.richadsZoneId} onChange={set('richadsZoneId')} placeholder="zone-xxxx" />
-            <Field label="Backup 2 · Adsterra Direct Link" value={f.adsterraLink} onChange={set('adsterraLink')} placeholder="https://..." />
-            <Note>Only the AdsGram Block ID is used by the app today; the backups are stored for when you add those networks.</Note>
+            <Field label="Backup · OnClickA Spot ID (Telegram video)" value={f.onclickaSpotId} onChange={set('onclickaSpotId')} placeholder="spot id from OnClickA" />
+            <Field label="Reserved · RichAds Zone ID" value={f.richadsZoneId} onChange={set('richadsZoneId')} placeholder="zone-xxxx" />
+            <Field label="Reserved · Adsterra Direct Link" value={f.adsterraLink} onChange={set('adsterraLink')} placeholder="https://..." />
+            <Note>AdsGram is tried first; if it has no ad (or the block is not active) OnClickA plays instead. RichAds and Adsterra are only stored for later.</Note>
           </Section>
           <Section title="🔁 Cross-Promo Redirects" badge="5 partner apps">
             <p className="ad-hint">Shown on the Watch Ads tab when a user reaches the daily ad limit.</p>
