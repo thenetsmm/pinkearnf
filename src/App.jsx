@@ -11,6 +11,7 @@ import Invites from './pages/Invites.jsx';
 import Profile from './pages/Profile.jsx';
 import Admin from './admin/Admin.jsx';
 import History from './pages/History.jsx';
+import Proofs from './pages/Proofs.jsx';
 import Games from './pages/Games.jsx';
 import { SpinModal, ScratchModal, MysteryModal } from './components/GameModals.jsx';
 
@@ -268,6 +269,10 @@ export default function App() {
       setView('admin');
       window.scrollTo({ top: 0 });
     },
+    openProofs: () => {
+      setView('proofs');
+      window.scrollTo({ top: 0 });
+    },
     openHistory: () => {
       setView('history');
       window.scrollTo({ top: 0 });
@@ -299,6 +304,8 @@ export default function App() {
     <div className="app">
       {view === 'admin' ? (
         <Admin me={me} notify={notify} onExit={() => setView(null)} />
+      ) : view === 'proofs' ? (
+        <Proofs onBack={() => setView(null)} />
       ) : view === 'history' ? (
         <History onBack={() => setView(null)} />
       ) : (
